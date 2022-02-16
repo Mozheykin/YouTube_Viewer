@@ -3,3 +3,5 @@ __pycache__
 geckodriver.log
 geckodriver
 .vscode
+proxy_list.txt
+sqlite.db

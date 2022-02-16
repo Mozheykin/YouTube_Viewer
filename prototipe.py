@@ -73,8 +73,8 @@ class prototipe:
             video = self.check_exists_by_xpath(f'//a[@href="{self.target_url}"]').click()
             time.sleep(random.randint(time_low, time_max))
             
-        except Exception as ex:
-            print(ex)
+        except Exception:
+            pass
         finally:
             self.driver.close()
             self.driver.quit()
