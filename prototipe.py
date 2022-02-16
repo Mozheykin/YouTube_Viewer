@@ -1,7 +1,6 @@
 from seleniumwire import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
-# from selenium.webdriver.support.ui import WebDriverWait
 import os
 import time
 from random_user_agent.user_agent import UserAgent
@@ -46,7 +45,7 @@ class prototipe:
             return ''
         
     
-    def go(self):
+    def go(self, time_low:int, time_max:int):
         try:
             self.driver.get(url=self.url)
             time.sleep(5)
@@ -72,7 +71,7 @@ class prototipe:
                 scroll_now += 25
             
             video = self.check_exists_by_xpath(f'//a[@href="{self.target_url}"]').click()
-            time.sleep(random.randint(10,15))
+            time.sleep(random.randint(time_low, time_max))
             
         except Exception as ex:
             print(ex)
