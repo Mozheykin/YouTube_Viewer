@@ -6,6 +6,7 @@ import random
 import argparse
 from termcolor import colored
 import database
+import re
 
 
 target_url = 'https://www.youtube.com/watch?v=gHZ73tQ9XAU'
@@ -32,16 +33,26 @@ def browser(target_url, proxy, name_video, time_low, time_max):
     pr.go(time_low=time_low, time_max=time_max)
 
 
-def start_view_video(args):
-    command, thread_count = args.split(':')
+def add_video(args):
+    https, target_url, name_video, time_min, time_max, thread, count, path_db =  args.split(":")
+    target_url = https + target_url
+    print(f'{target_url=} {name_video=} {time_min=} {time_max=}')
+    db = database.sql(path=path_db)
+    db.add_video(target_url, name_video, time_min, time_max, thread, count)
+
+def start_view_video(args): # TODO Play the videos in DB
+    command, thread_count, path_db = args.split(':')
+    db = database.sql(path=path_db)
+    PROXY_LIST = db.get_proxy_avalible()
+    
     if command == 'Play':
-        for _ in range(int(thread_count+1)):
+        for _ in range(int(thread_count)):
             ThreadingVideo = threading.Thread(
                 target=browser, 
-                args=(target_url, '154.16.243.167:6311:ctimpebr:anssq5y9ocac', name_video, 16, 25)
+                args=(target_url, random.choices(PROXY_LIST)[0][1], name_video, 16, 25)
                 )
             ThreadingVideo.start()
-            time.sleep(random.randint(8, 15))
+            time.sleep(random.randint(3, 15))
 
 def add_proxy(args):
     path_proxy_list, path_db = args.split(':')
@@ -53,11 +64,11 @@ def add_proxy(args):
                 db.add_proxy(proxy=proxy)
 
 
-
 def main():
     FUNCTIONS_LIST = {
     'View_videos': start_view_video,
     'Add_proxy': add_proxy,
+    'Add_video': add_video,
     }   
     args = parce_args()
     if str(args.functions) in FUNCTIONS_LIST:

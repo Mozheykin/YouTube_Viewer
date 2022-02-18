@@ -2,7 +2,7 @@ import sqlite3
 
 
 class sql:
-    def __init__(self, path:str, view_table='view_table', proxy_table='proxy_table') -> None:
+    def __init__(self, path='sqlite.db', view_table='view_table', proxy_table='proxy_table') -> None:
         self.view_table = view_table
         self.proxy_table = proxy_table
         self.db = sqlite3.connect(path)
@@ -41,4 +41,14 @@ class sql:
         with self.db:
             return self.cursor.execute(f'UPDATE {self.proxy_table} SET avalible=? WHERE id=?', (avalible, id))
     
-
+    def get_proxy_avalible(self):
+        with self.db:
+            return self.cursor.execute(f'SELECT *  FROM {self.proxy_table} WHERE avalible=?', (True,)).fetchall()
+    
+    def add_video(self, target_url, name, min, max, thread, count):
+        with self.db:
+            return self.cursor.execute(
+                f'INSERT INTO {self.view_table}(url, name, min_view, max_view, thread, count_view, avalible) VALUES(?,?,?,?,?,?,?)',
+                (target_url, name, min, max, thread, count, True)
+                )
+    
