@@ -1,10 +1,9 @@
 from seleniumwire import webdriver
-from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 import os
 import time
 from random_user_agent.user_agent import UserAgent
-from random_user_agent.params import SoftwareName, OperatingSystem
+from random_user_agent.params import SoftwareName, OperatingSystem, HardwareType
 import random
 
 #Wedriver - https://github.com/mozilla/geckodriver/releases
@@ -12,8 +11,27 @@ import random
 
 name_driver = 'geckodriver'
 
-software_names = [SoftwareName.CHROME.value, SoftwareName.ANDROID.value, SoftwareName.FIREFOX.value]
-operating_systems = [OperatingSystem.WINDOWS.value, OperatingSystem.LINUX.value, OperatingSystem.ANDROID.value]
+software_names = [
+    SoftwareName.CHROME.value, 
+    SoftwareName.ANDROID.value, 
+    SoftwareName.FIREFOX.value, 
+    SoftwareName.OPERA.value, 
+    SoftwareName.INTERNET_EXPLORER.value,
+    SoftwareName.EDGE.value,
+    SoftwareName.QQ_BROWSER.value,
+    ]
+operating_systems = [
+    OperatingSystem.WINDOWS.value, 
+    OperatingSystem.LINUX.value, 
+    OperatingSystem.ANDROID.value, 
+    OperatingSystem.UNIX.value
+    ]
+hardwar_types = [
+    HardwareType.COMPUTER.value,
+    HardwareType.MOBILE.value,
+    HardwareType.LARGE_SCREEN__TV.value,
+    HardwareType.LARGE_SCREEN__GAME_CONSOLE.value
+]
 
 
 
@@ -37,12 +55,20 @@ class prototipe:
         options.set_preference('general.useragent.override', user_agent)
         options.set_preference('dom.webdriver.enabled', False)
         self.driver = webdriver.Firefox(executable_path=os.path.join(os.getcwd(), name_driver), seleniumwire_options=proxy_options)
+        self.driver.delete_all_cookies()
 
     def check_exists_by_xpath(self, xpath:str):
         try:
             return self.driver.find_element_by_xpath(xpath)
         except NoSuchElementException:
             return ''
+    
+    def check_css(self, css_selector:str):
+        try:
+            button = self.driver.find_element_by_css_selector(css_selector=css_selector)
+            return True
+        except NoSuchElementException:
+            return False
         
     
     def go(self, time_low:int, time_max:int):
@@ -50,16 +76,19 @@ class prototipe:
             self.driver.get(url=self.url)
             time.sleep(5)
 
-            button = self.driver.find_element_by_css_selector('ytd-button-renderer.ytd-consent-bump-v2-lightbox:nth-child(2) > a:nth-child(1) > tp-yt-paper-button:nth-child(1)')
-            self.driver.execute_script('arguments[0].scrollIntoView();', button)
-            button.click()
-            time.sleep(random.randint(3,5))
+            if self.check_css('ytd-button-renderer.ytd-consent-bump-v2-lightbox:nth-child(2) > a:nth-child(1) > tp-yt-paper-button:nth-child(1)'):
+                button = self.driver.find_element_by_css_selector('ytd-button-renderer.ytd-consent-bump-v2-lightbox:nth-child(2) > a:nth-child(1) > tp-yt-paper-button:nth-child(1)')
+                self.driver.execute_script('arguments[0].scrollIntoView();', button)
+                button.click()
+                time.sleep(random.randint(3,5))
 
 
-            search = self.check_exists_by_xpath("//input[@id='search']").send_keys(self.name_video)
+            search = self.check_exists_by_xpath("//input[@id='search']")
+            search.send_keys(self.name_video)
             time.sleep(random.randint(2,3))   
 
-            search_button = self.check_exists_by_xpath("//button[@id='search-icon-legacy']").click()
+            search_button = self.check_exists_by_xpath("//button[@id='search-icon-legacy']")
+            search_button.click()
             time.sleep(random.randint(1,5))
 
             scroll_now = 0

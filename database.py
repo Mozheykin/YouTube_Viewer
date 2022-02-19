@@ -52,3 +52,7 @@ class sql:
                 (target_url, name, min, max, thread, count, True)
                 )
     
+    def get_videos(self):
+        with self.db:
+            return self.cursor.execute(f'SELECT * FROM {self.view_table} WHERE avalible=?', (True,)).fetchall()
+    

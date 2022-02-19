@@ -40,25 +40,30 @@ def add_video(args):
     db = database.sql(path=path_db)
     db.add_video(target_url, name_video, time_min, time_max, thread, count)
 
-def start_view_video(args): # TODO Play the videos in DB
-    command, thread_count, path_db = args.split(':')
+
+def start_view_video(args):
+    command, path_db = args.split(':')
     db = database.sql(path=path_db)
     PROXY_LIST = db.get_proxy_avalible()
     
-    if command == 'Play':
-        for _ in range(int(thread_count)):
-            ThreadingVideo = threading.Thread(
-                target=browser, 
-                args=(target_url, random.choices(PROXY_LIST)[0][1], name_video, 16, 25)
-                )
-            ThreadingVideo.start()
-            time.sleep(random.randint(3, 15))
+    VIDEO_LIST = db.get_videos()
+
+    for VIDEO in VIDEO_LIST:
+        if command == 'Play':
+            for _ in range(int(VIDEO[5])):
+                ThreadingVideo = threading.Thread(
+                    target=browser, 
+                    args=(VIDEO[1], random.choices(PROXY_LIST)[0][1], VIDEO[2], int(VIDEO[3]), int(VIDEO[4]))
+                    )
+                ThreadingVideo.start()
+                time.sleep(random.randint(3, 10))
+
 
 def add_proxy(args):
     path_proxy_list, path_db = args.split(':')
     db = database.sql(path=path_db)
     with open(path_proxy_list, 'r', newline='\r\n') as file:
-        for id, line in enumerate(file.readlines()):
+        for line in file.readlines():
             proxy = line[:-2]
             if db.check_proxy(proxy=proxy)[0]==0:
                 db.add_proxy(proxy=proxy)
