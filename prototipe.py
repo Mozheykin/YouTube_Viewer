@@ -74,22 +74,23 @@ class prototipe:
     def go(self, time_low:int, time_max:int):
         try:
             self.driver.get(url=self.url)
-            time.sleep(5)
+            time.sleep(random.randint(7,12))
 
             if self.check_css('ytd-button-renderer.ytd-consent-bump-v2-lightbox:nth-child(2) > a:nth-child(1) > tp-yt-paper-button:nth-child(1)'):
                 button = self.driver.find_element_by_css_selector('ytd-button-renderer.ytd-consent-bump-v2-lightbox:nth-child(2) > a:nth-child(1) > tp-yt-paper-button:nth-child(1)')
                 self.driver.execute_script('arguments[0].scrollIntoView();', button)
                 button.click()
                 time.sleep(random.randint(3,5))
+                
+            search = self.driver.find_element_by_xpath("//input[@id='search']")
+            for key in self.name_video:
+                search.send_keys(key)
+                time.sleep(random.uniform(0.05, 0.2))
+            time.sleep(random.randint(3, 5))
 
-
-            search = self.check_exists_by_xpath("//input[@id='search']")
-            search.send_keys(self.name_video)
-            time.sleep(random.randint(2,3))   
-
-            search_button = self.check_exists_by_xpath("//button[@id='search-icon-legacy']")
+            search_button = self.driver.find_element_by_xpath('//button[@id="search-icon-legacy"]')
             search_button.click()
-            time.sleep(random.randint(1,5))
+            time.sleep(random.randint(3, 5))
 
             scroll_now = 0
             scroll_by = 25
@@ -102,8 +103,8 @@ class prototipe:
             video = self.check_exists_by_xpath(f'//a[@href="{self.target_url}"]').click()
             time.sleep(random.randint(time_low, time_max))
             
-        except Exception:
-            pass
+        except Exception as ex:
+            print(ex)
         finally:
             self.driver.close()
             self.driver.quit()
