@@ -56,7 +56,7 @@ def start_view_video(args):
                     args=(VIDEO[1], random.choices(PROXY_LIST)[0][1], VIDEO[2], int(VIDEO[3]), int(VIDEO[4]))
                     )
                 ThreadingVideo.start()
-                time.sleep(random.randint(3, 10))
+                time.sleep(random.randint(33, 56))
 
 
 def add_proxy(args):

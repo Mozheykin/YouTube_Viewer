@@ -3,8 +3,9 @@ from selenium.common.exceptions import NoSuchElementException
 import os
 import time
 from random_user_agent.user_agent import UserAgent
-from random_user_agent.params import SoftwareName, OperatingSystem, HardwareType
+from random_user_agent.params import SoftwareName, OperatingSystem, HardwareType, Popularity
 import random
+from pprint import pprint
 
 #Wedriver - https://github.com/mozilla/geckodriver/releases
 #thereading - https://www.youtube.com/watch?v=R4P7BSFH_oE
@@ -14,28 +15,27 @@ name_driver = 'geckodriver'
 software_names = [
     SoftwareName.CHROME.value, 
     SoftwareName.ANDROID.value, 
-    SoftwareName.FIREFOX.value, 
-    SoftwareName.OPERA.value, 
-    SoftwareName.INTERNET_EXPLORER.value,
-    SoftwareName.EDGE.value,
-    SoftwareName.QQ_BROWSER.value,
+    SoftwareName.FIREFOX.value,
+    SoftwareName.OPERA.value,
     ]
+
 operating_systems = [
-    OperatingSystem.WINDOWS.value, 
+    OperatingSystem.WINDOWS.value,
     OperatingSystem.LINUX.value, 
     OperatingSystem.ANDROID.value, 
-    OperatingSystem.UNIX.value
+    OperatingSystem.UNIX.value,
+    OperatingSystem.MAC.value,
     ]
-hardwar_types = [
+
+hardware_types = [
     HardwareType.COMPUTER.value,
-    HardwareType.MOBILE.value,
-    HardwareType.LARGE_SCREEN__TV.value,
-    HardwareType.LARGE_SCREEN__GAME_CONSOLE.value
+]
+
+popularity = [
+    Popularity.POPULAR.value,
 ]
 
 
-
-id = 'search'
 
 class prototipe:
     def __init__(self, target_url:str, proxy:str, name_video:str) -> None:
@@ -43,7 +43,13 @@ class prototipe:
         self.url = 'https://youtube.com'
         self.name_video = name_video
         self.target_url = f'/{target_url.split("/")[-1]}'
-        user_agent_rotator = UserAgent(software_names=software_names, operating_systems=operating_systems, limit=100)
+        user_agent_rotator = UserAgent(
+            operating_systems=operating_systems, 
+            software_names=software_names, 
+            hardware_types=hardware_types, 
+            popularity=popularity,
+            limit=100
+            )
         user_agent = user_agent_rotator.get_random_user_agent()
         ip, port, login, password = proxy.split(':')
         proxy_options = {
@@ -54,8 +60,8 @@ class prototipe:
         options = webdriver.FirefoxOptions()
         options.set_preference('general.useragent.override', user_agent)
         options.set_preference('dom.webdriver.enabled', False)
-        self.driver = webdriver.Firefox(executable_path=os.path.join(os.getcwd(), name_driver), seleniumwire_options=proxy_options)
-        self.driver.delete_all_cookies()
+        self.driver = webdriver.Firefox(executable_path=os.path.join(os.getcwd(), name_driver), seleniumwire_options=proxy_options, options=options)
+
 
     def check_exists_by_xpath(self, xpath:str):
         try:
@@ -82,7 +88,7 @@ class prototipe:
                 button.click()
                 time.sleep(random.randint(3,5))
                 
-            search = self.driver.find_element_by_xpath("//input[@id='search']")
+            search = self.driver.find_element_by_xpath('//form[@id="search-form"]//div[@id="container"]//div[@id="search-input"]//input[@id="search"]')
             for key in self.name_video:
                 search.send_keys(key)
                 time.sleep(random.uniform(0.05, 0.2))
@@ -100,11 +106,14 @@ class prototipe:
                 scroll_by += 25
                 scroll_now += 25
             
-            video = self.check_exists_by_xpath(f'//a[@href="{self.target_url}"]').click()
-            time.sleep(random.randint(time_low, time_max))
+            video = self.check_exists_by_xpath(f'//a[@href="{self.target_url}"]')
+            video.click()
+            time_view = random.randint(time_low, time_max)
+            print(f'{time_view / 60} min')
+            time.sleep(time_view)
             
-        except Exception as ex:
-            print(ex)
+        except Exception:
+            pass
         finally:
             self.driver.close()
             self.driver.quit()
