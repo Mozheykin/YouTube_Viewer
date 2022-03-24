@@ -5,10 +5,6 @@ import time
 from random_user_agent.user_agent import UserAgent
 from random_user_agent.params import SoftwareName, OperatingSystem, HardwareType, Popularity
 import random
-from pprint import pprint
-
-#Wedriver - https://github.com/mozilla/geckodriver/releases
-#thereading - https://www.youtube.com/watch?v=R4P7BSFH_oE
 
 name_driver = 'geckodriver'
 
@@ -54,13 +50,15 @@ class prototipe:
         ip, port, login, password = proxy.split(':')
         proxy_options = {
             'proxy': {
+                'http': f'http://{login}:{password}@{ip}:{port}',
                 'https': f'http://{login}:{password}@{ip}:{port}'
             }
         }
         options = webdriver.FirefoxOptions()
+        options.add_argument('--headless')
         options.set_preference('general.useragent.override', user_agent)
         options.set_preference('dom.webdriver.enabled', False)
-        self.driver = webdriver.Firefox(executable_path=os.path.join(os.getcwd(), name_driver), seleniumwire_options=proxy_options, options=options)
+        self.driver = webdriver.Firefox(executable_path='/home/legal/youtube_viewer_all/youtube_viewer/app/geckodriver', seleniumwire_options=proxy_options, options=options)
 
 
     def check_exists_by_xpath(self, xpath:str):
@@ -100,20 +98,25 @@ class prototipe:
 
             scroll_now = 0
             scroll_by = 25
+            check = 0
             while self.check_exists_by_xpath(f'//a[@href="{self.target_url}"]') == '':
                 self.driver.execute_script(f'window.scrollBy({scroll_now}, {scroll_by});')
                 time.sleep(3)
                 scroll_by += 25
                 scroll_now += 25
+                check += 1
+                if check == 30:
+                    return False
+
             
             video = self.check_exists_by_xpath(f'//a[@href="{self.target_url}"]')
             video.click()
             time_view = random.randint(time_low, time_max)
-            print(f'{time_view / 60} min')
             time.sleep(time_view)
+            return True
             
-        except Exception:
-            pass
+        except Exception as ex:
+            return ex 
         finally:
             self.driver.close()
             self.driver.quit()

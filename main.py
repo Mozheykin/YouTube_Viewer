@@ -1,24 +1,18 @@
-from distutils import command
-import prototipe
 import threading
+import multiprocessing
 import time
 import random
 import argparse
-from termcolor import colored
+# from app import database, prototipe
 import database
-import re
+import prototipe
 
 
+locker = threading.Lock()
 target_url = 'https://www.youtube.com/watch?v=gHZ73tQ9XAU'
 name_video = 'How to Grow a Mechanic Shop Business with Digital Marketing Strategy'
 THREAD_COUNT = 5
 NAME_DB = 'sqlite.db'
-
-
-# target_url1 = 'https://www.youtube.com/watch?v=0JJTdpKwA28'
-# name_video1 = 'Meditation Vibes Sounds & Ambience for Relaxation, Sleep, Study and Meditation | Get Some Sleep'
-# target_url2 = 'https://www.youtube.com/watch?v=nSfU5_hpWbo'
-# name_video2 = 'Hello Kitty Vs My Melody House Design 🍭💕 | Toca Life World | Toca Tanya'
 
 
 def parce_args():
@@ -28,9 +22,32 @@ def parce_args():
     return parce_arg.parse_args()
 
 
-def browser(target_url, proxy, name_video, time_low, time_max):
+def browser(target_url, proxy, name_video, time_low, time_max, id, path_db):
     pr = prototipe.prototipe(target_url=target_url, proxy=proxy, name_video=name_video)
-    pr.go(time_low=time_low, time_max=time_max)
+    db = database.sql(path=path_db)
+    if pr.go(time_low=time_low, time_max=time_max):
+        with locker:
+            db.update_count(db.video(id)[6] + 1, id)
+        print(f'"[INFO]" + 1 View ')
+    else:
+        print(f'[ERROR] Error View ')
+    db.close()
+
+
+def video_procces(VIDEO: list, PROXY_LIST: list, path_db: str):
+    pool = threading.BoundedSemaphore(value=THREAD_COUNT)
+    db = database.sql(path=path_db)
+    while  db.video(VIDEO[0])[6] < int(VIDEO[8]):
+        proxy_choice = random.choices(PROXY_LIST)[0][1]
+        ThreadingVideo = threading.Thread(
+            target=browser, 
+            args=(VIDEO[2], proxy_choice, VIDEO[3], int(VIDEO[4]), int(VIDEO[5]), int(VIDEO[0]), path_db),
+            name=f'thread {VIDEO[3]}',
+            )
+        ThreadingVideo.start()
+        time.sleep(5)
+
+
 
 
 def add_video(args):
@@ -42,21 +59,17 @@ def add_video(args):
 
 
 def start_view_video(args):
-    command, path_db = args.split(':')
-    db = database.sql(path=path_db)
-    PROXY_LIST = db.get_proxy_avalible()
-    
-    VIDEO_LIST = db.get_videos()
-
-    for VIDEO in VIDEO_LIST:
-        if command == 'Play':
-            for _ in range(int(VIDEO[5])):
-                ThreadingVideo = threading.Thread(
-                    target=browser, 
-                    args=(VIDEO[1], random.choices(PROXY_LIST)[0][1], VIDEO[2], int(VIDEO[3]), int(VIDEO[4]))
-                    )
-                ThreadingVideo.start()
-                time.sleep(random.randint(33, 56))
+    try:
+        command, path_db = args.split(':')
+        db = database.sql(path=path_db)
+        PROXY_LIST = db.get_proxy_avalible()
+        VIDEO_LIST = db.get_videos()
+        for number, VIDEO in enumerate(VIDEO_LIST):
+            if command == 'Play':
+                process = multiprocessing.Process(target=video_procces, args=(VIDEO, PROXY_LIST, path_db), name=f'process №{number}')
+                    # time.sleep(random.randint(15, 25))
+    except Exception as ex:
+        print(ex)
 
 
 def add_proxy(args):
