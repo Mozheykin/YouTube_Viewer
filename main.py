@@ -34,9 +34,10 @@ def browser(target_url, proxy, name_video, time_low, time_max, id, path_db):
     db.close()
 
 
-def video_procces(VIDEO: list, PROXY_LIST: list, path_db: str):
+def video_procces(VIDEO: list, path_db: str):
     pool = threading.BoundedSemaphore(value=THREAD_COUNT)
     db = database.sql(path=path_db)
+    PROXY_LIST = db.get_proxy_avalible()
     while  db.video(VIDEO[0])[6] < int(VIDEO[8]):
         proxy_choice = random.choices(PROXY_LIST)[0][1]
         ThreadingVideo = threading.Thread(
@@ -60,14 +61,11 @@ def add_video(args):
 
 def start_view_video(args):
     try:
-        command, path_db = args.split(':')
+        path_db = args
         db = database.sql(path=path_db)
-        PROXY_LIST = db.get_proxy_avalible()
         VIDEO_LIST = db.get_videos()
-        for number, VIDEO in enumerate(VIDEO_LIST):
-            if command == 'Play':
-                process = multiprocessing.Process(target=video_procces, args=(VIDEO, PROXY_LIST, path_db), name=f'process №{number}')
-                    # time.sleep(random.randint(15, 25))
+        with multiprocessing.Pool(multiprocessing.cpu_count() * 2) as p:
+            p.map(lambda VIDEO: video_procces(VIDEO, path_db), VIDEO_LIST)
     except Exception as ex:
         print(ex)
 
