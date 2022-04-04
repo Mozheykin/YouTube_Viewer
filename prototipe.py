@@ -5,7 +5,12 @@ import time
 from random_user_agent.user_agent import UserAgent
 from random_user_agent.params import SoftwareName, OperatingSystem, HardwareType, Popularity
 import random
+from loguru import logger
+# from app.main import logger
 
+
+logger.add('debug_proto.log', format='{time} {level} {message}', level='DEBUG', 
+            rotation='10 MB', compression='zip')
 name_driver = 'geckodriver'
 
 software_names = [
@@ -46,17 +51,17 @@ class prototipe:
             popularity=popularity,
             limit=100
             )
-        user_agent = user_agent_rotator.get_random_user_agent()
-        ip, port, login, password = proxy.split(':')
+        self.user_agent = user_agent_rotator.get_random_user_agent()
+        self.ip, self.port, login, password = proxy.split(':')
         proxy_options = {
             'proxy': {
-                'http': f'http://{login}:{password}@{ip}:{port}',
-                'https': f'http://{login}:{password}@{ip}:{port}'
+                'http': f'http://{login}:{password}@{self.ip}:{self.port}',
+                'https': f'http://{login}:{password}@{self.ip}:{self.port}'
             }
         }
         options = webdriver.FirefoxOptions()
         options.add_argument('--headless')
-        options.set_preference('general.useragent.override', user_agent)
+        options.set_preference('general.useragent.override', self.user_agent)
         options.set_preference('dom.webdriver.enabled', False)
         self.driver = webdriver.Firefox(executable_path='/home/legal/youtube_viewer_all/youtube_viewer/app/geckodriver', seleniumwire_options=proxy_options, options=options)
 
@@ -65,13 +70,15 @@ class prototipe:
         try:
             return self.driver.find_element_by_xpath(xpath)
         except NoSuchElementException:
+            logger.error('Check_exists_by_xpath NoSuchElementException ERROR')
             return ''
     
     def check_css(self, css_selector:str):
         try:
-            button = self.driver.find_element_by_css_selector(css_selector=css_selector)
+            self.driver.find_element_by_css_selector(css_selector=css_selector)
             return True
         except NoSuchElementException:
+            logger.error('check_css NoSuchElementException ERROR')
             return False
         
     
@@ -92,6 +99,7 @@ class prototipe:
                 time.sleep(random.uniform(0.05, 0.2))
             time.sleep(random.randint(3, 5))
 
+
             search_button = self.driver.find_element_by_xpath('//button[@id="search-icon-legacy"]')
             search_button.click()
             time.sleep(random.randint(3, 5))
@@ -106,16 +114,21 @@ class prototipe:
                 scroll_now += 25
                 check += 1
                 if check == 30:
+                    logger.error('Timer scrolling == 30')
                     return False
 
             
             video = self.check_exists_by_xpath(f'//a[@href="{self.target_url}"]')
-            video.click()
+            if video:
+                video.click()
             time_view = random.randint(time_low, time_max)
             time.sleep(time_view)
+
+            logger.info(f'{self.ip=}:{self.port} ---> {self.user_agent}')
             return True
             
         except Exception as ex:
+            logger.error(ex.with_traceback)
             return ex 
         finally:
             self.driver.close()

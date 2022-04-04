@@ -5,3 +5,4 @@ geckodriver
 .vscode
 proxy_list.txt
 sqlite.db
+*.log

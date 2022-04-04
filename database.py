@@ -29,6 +29,9 @@ class sql:
         except self.db.Error as ex:
             print(ex)
         self.db.commit()
+    
+    def __enter__(self):
+        return self
 
     def add_proxy(self, proxy:str):
         with self.db:
@@ -65,7 +68,6 @@ class sql:
         with self.db:
             return self.cursor.execute(f'UPDATE {self.view_table} SET count_view=? WHERE video_id=?', (count, id))
     
-    def close(self):
+    def __exit__(self, *args, **kwargs):
         self.db.commit()
         self.db.close()
-    

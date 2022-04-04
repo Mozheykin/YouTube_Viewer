@@ -6,11 +6,13 @@ import argparse
 # from app import database, prototipe
 import database
 import prototipe
+from loguru import logger
 
+
+logger.add('debug.log', format='{time} {level} {message}', level='DEBUG', 
+            rotation='10 MB', compression='zip')
 
 locker = threading.Lock()
-target_url = 'https://www.youtube.com/watch?v=gHZ73tQ9XAU'
-name_video = 'How to Grow a Mechanic Shop Business with Digital Marketing Strategy'
 THREAD_COUNT = 5
 NAME_DB = 'sqlite.db'
 
@@ -22,16 +24,17 @@ def parce_args():
     return parce_arg.parse_args()
 
 
-def browser(target_url, proxy, name_video, time_low, time_max, id, path_db):
-    pr = prototipe.prototipe(target_url=target_url, proxy=proxy, name_video=name_video)
-    db = database.sql(path=path_db)
-    if pr.go(time_low=time_low, time_max=time_max):
-        with locker:
-            db.update_count(db.video(id)[6] + 1, id)
-        print(f'"[INFO]" + 1 View ')
-    else:
-        print(f'[ERROR] Error View ')
-    db.close()
+def browser(target_url, proxy, name_video, time_low, time_max, id, path_db, pool):
+    with pool:
+        pr = prototipe.prototipe(target_url=target_url, proxy=proxy, name_video=name_video)
+        db = database.sql(path=path_db)
+        name_thr = threading.current_thread().name
+        name_process = multiprocessing.current_process().name
+        logger.info(f'{name_thr=}, {name_process=}')
+        if pr.go(time_low=time_low, time_max=time_max):
+            with locker:
+                db.update_count(db.video(id)[6] + 1, id)
+        db.close()
 
 
 def video_procces(VIDEO: list, path_db: str):
@@ -42,13 +45,11 @@ def video_procces(VIDEO: list, path_db: str):
         proxy_choice = random.choices(PROXY_LIST)[0][1]
         ThreadingVideo = threading.Thread(
             target=browser, 
-            args=(VIDEO[2], proxy_choice, VIDEO[3], int(VIDEO[4]), int(VIDEO[5]), int(VIDEO[0]), path_db),
+            args=(VIDEO[2], proxy_choice, VIDEO[3], int(VIDEO[4]), int(VIDEO[5]), int(VIDEO[0]), path_db, pool),
             name=f'thread {VIDEO[3]}',
             )
         ThreadingVideo.start()
         time.sleep(5)
-
-
 
 
 def add_video(args):
@@ -78,6 +79,7 @@ def add_proxy(args):
             proxy = line[:-2]
             if db.check_proxy(proxy=proxy)[0]==0:
                 db.add_proxy(proxy=proxy)
+
 
 
 def main():
