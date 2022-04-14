@@ -5,6 +5,7 @@ import random
 import os
 # from app import database
 import database
+import requests
 
 from random_user_agent.user_agent import UserAgent
 from random_user_agent.params import SoftwareName, OperatingSystem, HardwareType, Popularity
@@ -47,40 +48,49 @@ popularity = [
 
 class Prototipe:
     def __init__(self, target_url:str, proxy:str, name_video:str) -> None:
-        self.proxy = proxy
-        self.url = 'https://youtube.com'
-        self.name_video = name_video
-        self.target_url = f'/{target_url.split("/")[-1]}'
-        user_agent_rotator = UserAgent(
-            operating_systems=operating_systems, 
-            software_names=software_names, 
-            hardware_types=hardware_types, 
-            popularity=popularity,
-            limit=100
-            )
-        self.user_agent = user_agent_rotator.get_random_user_agent()
-        self.ip, self.port, login, password = proxy.split(':')
-        proxy_options = {
-            'proxy': {
-                'http': f'http://{login}:{password}@{self.ip}:{self.port}',
-                'https': f'http://{login}:{password}@{self.ip}:{self.port}'
+        try:
+            self.proxy = proxy
+            self.url = 'https://youtube.com'
+            self.name_video = name_video
+            self.target_url = f'/{target_url.split("/")[-1]}'
+            user_agent_rotator = UserAgent(
+                operating_systems=operating_systems, 
+                software_names=software_names, 
+                hardware_types=hardware_types, 
+                popularity=popularity,
+                limit=100
+                )
+            self.user_agent = user_agent_rotator.get_random_user_agent()
+            self.ip, self.port, login, password = proxy.split(':')
+            proxy_options = {
+                'proxy': {
+                    'http': f'http://{login}:{password}@{self.ip}:{self.port}',
+                    'https': f'http://{login}:{password}@{self.ip}:{self.port}'
+                }
             }
-        }
-        options = webdriver.FirefoxOptions()
-        options.add_argument('--headless')
-        options.set_preference('general.useragent.override', self.user_agent)
-        options.set_preference('dom.webdriver.enabled', False)
-        self.driver = webdriver.Firefox(
-            executable_path=DIR_DRIVER,
-            seleniumwire_options=proxy_options,
-            options=options
+            options = webdriver.FirefoxOptions()
+            options.add_argument('--headless')
+            options.set_preference('general.useragent.override', self.user_agent)
+            options.set_preference('dom.webdriver.enabled', False)
+            self.driver = webdriver.Firefox(
+                executable_path=DIR_DRIVER,
+                seleniumwire_options=proxy_options,
+                options=options
             )
+            self.check_status_code()
+        except Exception as ex:
+            logger.error(ex)
 
     def check_exists_by_xpath(self, xpath:str):
         try:
             return self.driver.find_element_by_xpath(xpath)
         except NoSuchElementException:
             return ''
+    
+    def check_status_code(self):
+        if not self.driver.request.status_code == 200:
+            raise OSError("Response " + str(self.driver.request.status_code)
+                + ": " + self.driver.request.content)
     
     def check_css(self, css_selector:str):
         try:
@@ -93,6 +103,7 @@ class Prototipe:
     def go(self, time_low:int, time_max:int, id_:int):
         try:
             self.driver.get(url=self.url)
+            self.check_status_code()
             time.sleep(random.randint(7,12))
 
             if self.check_css('ytd-button-renderer.ytd-consent-bump-v2-lightbox:nth-child(2) > a:nth-child(1) > tp-yt-paper-button:nth-child(1)'):

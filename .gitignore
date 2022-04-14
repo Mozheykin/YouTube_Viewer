@@ -1,8 +1,7 @@
 .venv
 __pycache__
-geckodriver.log
 geckodriver
 .vscode
-proxy_list.txt
+*.txt
 sqlite.db
 *.log
